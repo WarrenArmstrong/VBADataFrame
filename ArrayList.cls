@@ -102,18 +102,22 @@ End Function
 Public Function indexOf(o As Variant) As Long
     Dim i As Long
     
-    If o = Null Then
+    If IsObject(o) Then
         For i = 0 To pSize - 1
-            If elementData(i) = Null Then
-                indexOf = i
-                Exit Function
+            If IsObject(elementData(i)) Then
+                If elementData(i) Is o Then
+                    indexOf = i
+                    Exit Function
+                End If
             End If
         Next i
     Else
         For i = 0 To pSize - 1
-            If o = elementData(i) Then
-                indexOf = i
-                Exit Function
+            If Not IsObject(elementData(i)) Then
+                If elementData(i) = o Then
+                    indexOf = i
+                    Exit Function
+                End If
             End If
         Next i
     End If
@@ -123,18 +127,22 @@ End Function
 Public Function lastIndexOf(o As Variant) As Long
     Dim i As Long
     
-    If o = Null Then
+    If IsObject(o) Then
         For i = pSize - 1 To 0 Step -1
-            If elementData(i) = Null Then
-                indexOf = i
-                Exit Function
+            If IsObject(elementData(i)) Then
+                If elementData(i) Is o Then
+                    indexOf = i
+                    Exit Function
+                End If
             End If
         Next i
     Else
         For i = pSize - 1 To 0 Step -1
-            If o = elementData(i) Then
-                indexOf = i
-                Exit Function
+            If Not IsObject(elementData(i)) Then
+                If elementData(i) = o Then
+                    indexOf = i
+                    Exit Function
+                End If
             End If
         Next i
     End If
@@ -142,9 +150,11 @@ Public Function lastIndexOf(o As Variant) As Long
 End Function
 
 Public Function clone() As ArrayList
+    'Err.Raise -1, "ArrayList.clone()", "ArrayList.clone() must be re-Implemented"
+    
     Dim v As ArrayList
     Set v = New ArrayList
-    v.setElementData copyOf(elementData, pSize)
+    v.addArray toArray
     Set clone = v
 End Function
 
@@ -155,11 +165,13 @@ End Function
 Public Function getItem(inIndex As Long)
     rangeCheck inIndex
     
-    If IsObject(elementData(inIndex)) Then
-        Set getItem = elementData(inIndex)
-    Else
-        getItem = elementData(inIndex)
-    End If
+    If IsObject(elementData(inIndex)) Then Set getItem = elementData(inIndex) Else getItem = elementData(inIndex)
+    
+    'If IsObject(elementData(inIndex)) Then
+    '    Set getItem = elementData(inIndex)
+    'Else
+    '    getItem = elementData(inIndex)
+    'End If
 End Function
 
 Private Function rangeCheck(inIndex As Long)
@@ -179,18 +191,24 @@ Public Function setItem(inIndex As Long, inElement As Variant) As Variant
     
     rangeCheck inIndex
     
-    oldValue = elementData(inIndex)
-    elementData(inIndex) = inElement
-    setItem = oldValue
+    If IsObject(elementData(inIndex)) Then Set oldValue = elementData(inIndex) Else oldValue = elementData(inIndex)
+    If IsObject(inElement) Then Set elementData(inIndex) = inElement Else elementData(inIndex) = inElement
+    If IsObject(oldValue) Then Set setItem = oldValue Else setItem = oldValue
+    
+    'oldValue = elementData(inIndex)
+    'elementData(inIndex) = inElement
+    'setItem = oldValue
 End Function
 
 Public Function add(e As Variant) As Boolean
     ensureCapacityInternal (pSize + 1)
-    If IsObject(e) Then
-        Set elementData(pSize) = e
-    Else
-        elementData(pSize) = e
-    End If
+    
+    If IsObject(e) Then Set elementData(pSize) = e Else elementData(pSize) = e
+    'If IsObject(e) Then
+    '    Set elementData(pSize) = e
+    'Else
+    '    elementData(pSize) = e
+    'End If
     pSize = pSize + 1
     add = True
 End Function
@@ -200,7 +218,8 @@ Public Function addIndex(inIndex As Long, e As Variant)
     
     ensureCapacityInternal pSize + 1
     arrayCopy elementData, inIndex, elementData, inIndex + 1, pSize - index
-    elementData(inIndex) = element
+    If IsObject(element) Then Set elementData(inIndex) = element Else elementData(inIndex) = element
+    'elementData(inIndex) = element
     pSize = pSize + 1
 End Function
 
@@ -209,7 +228,8 @@ Public Function remove(inIndex As Long) As Variant
     Dim numMoved As Long
     rangeCheck inIndex
     
-    oldValue = elementData(inIndex)
+    If IsObject(elementData(inIndex)) Then Set oldValue = elementData(inIndex) Else oldValue = elementData(inIndex)
+    'oldValue = elementData(inIndex)
     
     numMoved = pSize - inIndex - 1
     
@@ -222,24 +242,57 @@ Public Function remove(inIndex As Long) As Variant
 End Function
 
 Public Function removeItem(o As Variant) As Boolean
-    Dim i As Long
-    If o = Null Then
-        For i = 0 To pSize - 1
-            If elementData(i) = Null Then
-                fastRemove inIndex
-                removeItem = True
-                End Function
-            End If
-        Next i
+    Dim oIndex As Long
+    
+    oIndex = indexOf(o)
+    If oIndex = -1 Then
+        removeItem = False
+        Exit Function
     Else
-        For i = 0 To pSize - 1
-            If elementData(i) = o Then
-                fastRemove inIndex
-                removeItem = True
-                End Function
-            End If
-        Next i
+        fastRemove oIndex
+        removeItem = True
+        Exit Function
     End If
+        
+    
+    'Dim i As Long
+   '
+   '
+   '
+    'If IsObject(o) Then
+    '    For i = 0 To pSize - 1
+    '        If IsObject(elementData(i)) Then
+    '            If elementData(i) Is o Then
+    '                fastRemove i
+    '                removeItem = True
+    '                Exit Function
+    '            End If
+    '        End If
+    '    Next i
+    'Else
+    '    For i = 0 To pSize - 1
+    '        If Not IsObject(elementData(i)) Then
+    '
+   '
+   ' End If
+   '
+   ' If o = Null Then
+   '     For i = 0 To pSize - 1
+   '         If elementData(i) = Null Then
+   '             fastRemove inIndex
+   '             removeItem = True
+   '             End Function
+   '         End If
+   '     Next i
+   ' Else
+   '     For i = 0 To pSize - 1
+   '         If elementData(i) = o Then
+   '             fastRemove inIndex
+   '             removeItem = True
+   '             End Function
+   '         End If
+   '     Next i
+   ' End If
 End Function
 
 Private Function fastRemove(inIndex As Long)
@@ -300,145 +353,29 @@ End Function
 
 Public Function replaceAll(inItem As Variant, inNewItem As Variant)
     Dim i As Long
-    For i = 0 To pSize - 1
-        If i = inItem Then
-            Me.setItem i, inNewItem
-        End If
-    Next i
+    
+    If IsObject(o) Then
+        For i = 0 To pSize - 1
+            If IsObject(elementData(i)) Then
+                If elementData(i) Is o Then
+                    setItem i, inNewItem
+                End If
+            End If
+        Next i
+    Else
+        For i = 0 To pSize - 1
+            If Not IsObject(elementData(i)) Then
+                If elementData(i) = o Then
+                    setItem i, inNewItem
+                End If
+            End If
+        Next i
+    End If
 End Function
 
 Public Function sort(Optional decreasing As Boolean)
-    If Not decreasing Then
-        mergeSortIncreasing 0, pSize - 1
-    Else
-        mergeSortDecreasing 0, pSize - 1
-    End If
+    Err.Raise -1, "ArrayList.sort", "ArrayList.sort() not implemented yet"
 End Function
-
-Private Function mergeSortIncreasing(inLow As Long, inHigh As Long)
-    Dim middle As Long
-    
-    middle = Int((inLow + inHigh) / 2)
-    If inLow <> middle Then
-        mergeSortIncreasing inLow, middle
-    End If
-    
-    If middle + 1 <> inHigh Then
-        mergeSortIncreasing middle + 1, inHigh
-    End If
-    mergeIncreasing inLow, middle, inHigh
-End Function
-
-Private Function mergeIncreasing(inLow As Long, inMiddle As Long, inHigh As Long)
-    Dim i As Long, j As Long, k As Long, n1 As Long, n2 As Long
-    Dim L As Variant, R As Variant
-    
-    n1 = inMiddle - inLow + 1
-    n2 = inHigh - inMiddle
-    
-    ReDim L(0 To n1 - 1)
-    ReDim R(0 To n2 - 1)
-    
-    For i = 0 To n1 - 1
-        L(i) = elementData(inLow + i)
-    Next i
-    
-    For i = 0 To n2 - 1
-        R(i) = elementData(inMiddle + 1 + i)
-    Next i
-    
-    
-    i = 0
-    j = 0
-    k = inLow
-    
-    Do While i < n1 And j < n2
-        If L(i) <= R(j) Then
-            elementData(k) = L(i)
-            i = i + 1
-        Else
-            elementData(k) = R(j)
-            j = j + 1
-        End If
-        k = k + 1
-    Loop
-    
-    Do While i < n1
-        elementData(k) = L(i)
-        i = i + 1
-        k = k + 1
-    Loop
-    
-    Do While j < n2
-        elementData(k) = R(j)
-        j = j + 1
-        k = k + 1
-    Loop
-End Function
-
-Private Function mergeSortDecreasing(inLow As Long, inHigh As Long)
-    Dim middle As Long
-    
-    middle = Int((inLow + inHigh) / 2)
-    If inLow <> middle Then
-        mergeSortDecreasing inLow, middle
-    End If
-    
-    If middle + 1 <> inHigh Then
-        mergeSortDecreasing middle + 1, inHigh
-    End If
-    mergeDecreasing inLow, middle, inHigh
-End Function
-
-Private Function mergeDecreasing(inLow As Long, inMiddle As Long, inHigh As Long)
-    Dim i As Long, j As Long, k As Long, n1 As Long, n2 As Long
-    Dim L As Variant, R As Variant
-    
-    n1 = inMiddle - inLow + 1
-    n2 = inHigh - inMiddle
-    
-    ReDim L(0 To n1 - 1)
-    ReDim R(0 To n2 - 1)
-    
-    For i = 0 To n1 - 1
-        L(i) = elementData(inLow + i)
-    Next i
-    
-    For i = 0 To n2 - 1
-        R(i) = elementData(inMiddle + 1 + i)
-    Next i
-    
-    
-    i = 0
-    j = 0
-    k = inLow
-    
-    Do While i < n1 And j < n2
-        If L(i) >= R(j) Then
-            elementData(k) = L(i)
-            i = i + 1
-        Else
-            elementData(k) = R(j)
-            j = j + 1
-        End If
-        k = k + 1
-    Loop
-    
-    Do While i < n1
-        elementData(k) = L(i)
-        i = i + 1
-        k = k + 1
-    Loop
-    
-    Do While j < n2
-        elementData(k) = R(j)
-        j = j + 1
-        k = k + 1
-    Loop
-End Function
-
-
-
 
 
 Private Function copyOf(inArray As Variant, inSize As Long) As Variant
@@ -465,16 +402,13 @@ Private Function arrayCopy(sourceArr As Variant, sourcePos As Long, ByRef destAr
     Dim i As Long
     
     For i = 0 To inLen - 1
-        destArr(i + destPos) = sourceArr(i + sourcePos)
+        If IsObject(sourceArr(i + sourcePos)) Then
+            Set destArr(i + destPos) = sourceArr(i + sourcePos)
+        Else
+            destArr(i + destPos) = sourceArr(i + sourcePos)
+        End If
+        'destArr(i + destPos) = sourceArr(i + sourcePos)
     Next i
 End Function
 
-
-
-'bad required functs
-
-Public Function setElementData(inElementData As Variant)
-    elementData = inElementData
-    pSize = UBound(inElementData) - LBound(inElementData) + 1
-End Function
 

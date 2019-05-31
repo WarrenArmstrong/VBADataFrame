@@ -17,40 +17,10 @@ Private Sub Class_Initialize()
     Set data = New ArrayList
 End Sub
 
-
-'Constructor
-
-Public Function construct(inColumnName, inLength As Long)
-    data.ensureCapacity inLength
-    pName = inColumnName
+Public Function construct(inName As String, inStartingLength As Long)
+    name = inName
+    data.ensureCapacity inStartingLength
 End Function
-
-
-'Cloners
-
-Public Function clone() As DataFrameColumn
-    Dim cl As DataFrameColumn: Set cl = New DataFrameColumn
-    cl.name = Me.name
-    cl.setData data.clone
-    Set clone = cl
-End Function
-
-Public Function cloneEmpty() As DataFrameColumn
-    Dim cl As DataFrameColumn: Set cl = New DataFrameColumn
-    cl.name = Me.name
-    Set clone = cl
-End Function
-
-
-'Properties
-
-Public Property Let name(inNewColumnName As String)
-    pName = inNewColumnName
-End Property
-
-Public Property Get name() As String
-    name = pName
-End Property
 
 Public Property Get index(inIndex As Long) As Variant
     index = data.getItem(inIndex)
@@ -64,42 +34,73 @@ Public Property Set index(inIndex As Long, inValue As Variant)
     data.setItem inIndex, inValue
 End Property
 
+Public Property Get name() As String
+    name = pName
+End Property
 
-'Data Functions
+Public Property Let name(inName As String)
+    pName = inName
+End Property
 
+Public Property Get size() As Long
+    size = data.size
+End Property
+
+Public Function clone(Optional makeEmpty As Boolean) As DataFrameColumn
+    Dim cloneDFC As DataFrameColumn: Set cloneDFC = New DataFrameColumn
+    cloneDFC.name = name
+    If (Not makeEmpty) And (Not data.isEmpty) Then cloneDFC.setData data.clone
+    Set clone = cloneDFC
+End Function
+
+Public Function append(inDataFrameColumn As DataFrameColumn)
+    If inDataFrameColumn.size > 0 Then data.addArray inDataFrameColumn.dataArray
+End Function
+
+Public Function ensureRowCount(inRowCount)
+    If data.size < inRowCount Then
+        Dim tempArray As Variant
+        ReDim tempArray(0 To (inRowCount - data.size) - 1)
+        data.addArray tempArray
+    End If
+End Function
+
+Public Function add(inValue As Variant)
+    data.add inValue
+End Function
+
+Public Function addArray(inArray As Variant)
+    If UBound(inArray) - LBound(inArray) >= 0 Then data.addArray inArray
+End Function
+
+Public Function Map(ByVal delegate As String, Optional ByVal progressFunctor As String)
+    Dim showProgress As Boolean, ProgressMod As Long
+    showProgress = Not progressFunctor = ""
+    ProgressMod = Int(size / 100)
+    If ProgressMod < 1 Then ProgressMod = 1
+    
+    Dim i As Long
+    For i = 0 To size - 1
+        If showProgress Then
+            If i Mod ProgressMod = 0 Then DoEvents: Application.Run progressFunctor, i / ProgressMod
+        End If
+        data.setItem i, Application.Run(delegate, data.getItem(i))
+    Next i
+End Function
+
+Public Function mapped(ByVal delegate As String, Optional ByVal progressFunctor As String) As DataFrameColumn
+    Dim cloneDFC As DataFrameColumn: Set cloneDFC = clone
+    cloneDFC.name = delegate & "(" & cloneDFC.name & ")"
+    If IsMissing(progressFunctor) Then cloneDFC.Map delegate Else cloneDFC.Map delegate, progressFunctor
+    Set mapped = cloneDFC
+End Function
+
+
+'Boo bad functions
 Public Function setData(inData As ArrayList)
     Set data = inData
 End Function
 
-Public Function add(inItem As Variant)
-    data.add inItem
-End Function
-
-Public Function size() As Long
-    size = data.size
-End Function
-
-Public Function addArray(inArray As Variant)
-    data.addArray inArray
-End Function
-
-Public Function appendColumn(inColumn As DataFrameColumn)
-    data.addArray inColumn.data.toArray
-End Function
-
-'Higher Order
-
-Public Function Map(ByVal delegate As String)
-    Dim i As Long
-    For i = 0 To data.size - 1
-        data.setItem i, Application.Run(delegate, index(i))
-    Next i
-End Function
-
-Public Function Mapped(ByVal delegate As String) As DataFrameColumn
-    Dim cl As DataFrameColumn
-    Set cl = Me.clone
-    cl.name = delegate & "(" & cl.name & ")"
-    cl.Map delegate
-    Set Mapped = cl
+Public Function dataArray() As Variant
+    dataArray = data.toArray
 End Function
